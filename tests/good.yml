@@ -1,0 +1,14 @@
+"Test 1":
+  bits:
+    - { byte: 0, bit: 3, width: 1, value: 1}
+    - { byte: 1, bit: 4, width: 4, value: 15}
+    - { byte: 2, bit: 0, width: 12, value: 0xfff}
+    - { byte: 4, width: 16, value: 0x4242}
+
+  output: 
+    - bytes: [ 0x10, 0x0f, 0xff, 0xf0, 0x42, 0x42 ]
+
+"Test 2":
+  input: [ 0x10, 0x0f, 0xff, 0xf0, 0x42, 0x42 ]
+  output: 
+    - bytes: [ 0x10, 0x0f, 0xff, 0xf0, 0x42, 0x42 ]

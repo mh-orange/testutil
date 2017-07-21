@@ -1,0 +1,5 @@
+
+"Test 3":
+  output: 
+    - error: "Neither input nor bit definitions were specified for test Test 3"
+
