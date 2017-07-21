@@ -114,12 +114,9 @@ func (b *buffer) setBit(bit int, value int) {
 
 func (b *buffer) setBits(start int, width uint, value int) {
 	value &= ((0x01 << width) - 1)
-	for i := width - 1; ; i-- {
+	for i := uint(0); i < width; i++ {
 		b.setBit(start, value>>(width-i-1))
 		start++
-		if i == 0 {
-			break
-		}
 	}
 }
 

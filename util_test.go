@@ -165,7 +165,7 @@ func TestIterateGoodTests(t *testing.T) {
 	IterateTests("tests/good.yml", func(name string, test Test) {
 		test.Output[0]["bytes"] = matchType(test.Output[0]["bytes"], test.Input)
 		if !reflect.DeepEqual(test.Input, test.Output[0]["bytes"]) {
-			t.Errorf("Failed to complete test: %v does not equal %v", test.Input, test.Output[0]["bytes"])
+			t.Errorf("Failed to complete test %s: %v does not equal %v", name, test.Input, test.Output[0]["bytes"])
 		}
 	})
 }
