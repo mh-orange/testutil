@@ -1,6 +1,7 @@
 package testutil
 
 import (
+	"encoding"
 	"fmt"
 	"io/ioutil"
 	"reflect"
@@ -33,27 +34,48 @@ func (r *Result) String() string {
 	return "\t" + strings.Join(r.failures, "\n\t")
 }
 
-func matchType(i interface{}, match interface{}) interface{} {
-	value := reflect.ValueOf(i)
+func convertType(input interface{}, match interface{}) interface{} {
+	receiver := input
+	inputValue := reflect.ValueOf(input)
 	matchValue := reflect.ValueOf(match)
 
-	if value.Kind() == reflect.Slice && matchValue.Kind() == reflect.Slice {
-		t := matchValue.Type().Elem()
-		matchZeroValue := reflect.Zero(t).Interface()
-		if inputArray, ok := i.([]interface{}); ok {
-			outputArray := reflect.MakeSlice(reflect.TypeOf(match), 0, 0)
-			for i := 0; i < len(inputArray); i++ {
-				outputArray = reflect.Append(outputArray, reflect.ValueOf(matchType(inputArray[i], matchZeroValue)))
+	inputType := reflect.TypeOf(input)
+	matchType := reflect.TypeOf(match)
+	var zeroValue reflect.Value
+	if matchType.Kind() == reflect.Ptr {
+		zeroValue = reflect.New(matchType.Elem())
+	} else {
+		zeroValue = reflect.New(matchType)
+	}
+	if inputType.ConvertibleTo(matchType) {
+		receiver = inputValue.Convert(matchType).Interface()
+	} else if inputType.Kind() == reflect.String && zeroValue.Type().Implements(reflect.TypeOf((*encoding.TextUnmarshaler)(nil)).Elem()) {
+		zeroValue.MethodByName("UnmarshalText").Call([]reflect.Value{inputValue.Convert(reflect.TypeOf([]byte{}))})
+		if matchValue.Kind() == reflect.Ptr {
+			receiver = zeroValue.Interface()
+		} else {
+			receiver = zeroValue.Elem().Interface()
+		}
+	} else if inputType.Kind() == reflect.Slice {
+		if matchType.Kind() == reflect.Slice {
+			zeroType := reflect.Zero(matchType.Elem()).Interface()
+			receiverArray := reflect.MakeSlice(matchType, 0, 0)
+			for i := 0; i < matchValue.Len(); i++ {
+				receiverArray = reflect.Append(receiverArray, reflect.ValueOf(convertType(inputValue.Index(i).Interface(), zeroType)))
 			}
-			return outputArray.Interface()
+			receiver = receiverArray.Interface()
+		} else if inputType.Elem().Kind() == reflect.Uint8 && zeroValue.Type().Implements(reflect.TypeOf((*encoding.BinaryUnmarshaler)(nil)).Elem()) {
+			zeroValue.MethodByName("UnmarshalBinary").Call([]reflect.Value{inputValue})
+			receiver = zeroValue.Interface()
+
+			if matchValue.Kind() == reflect.Ptr {
+				receiver = zeroValue.Interface()
+			} else {
+				receiver = zeroValue.Elem().Interface()
+			}
 		}
 	}
-
-	t := reflect.TypeOf(i)
-	if t.ConvertibleTo(reflect.TypeOf(match)) {
-		return value.Convert(reflect.TypeOf(match)).Interface()
-	}
-	return i
+	return receiver
 }
 
 func getterFunc(name string, i interface{}) (f reflect.Value, err error) {
@@ -82,7 +104,7 @@ func Compare(expectedValues Expected, object interface{}) *Result {
 			if err == nil {
 				output := f.Call(nil)[0].Interface()
 
-				expectedValue = matchType(expectedValue, output)
+				expectedValue = convertType(expectedValue, output)
 
 				if !reflect.DeepEqual(output, expectedValue) {
 					result.Addf("%s Expected %v but got %v", name, expectedValue, output)
