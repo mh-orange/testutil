@@ -12,10 +12,10 @@ import (
 
 type Expected []map[string]interface{}
 type Test struct {
-	Bits   []map[string]int
-	Input  []byte
-	Output Expected
-	Err    string `yaml:"error"`
+	Bits     []map[string]int
+	Input    []byte
+	Expected Expected
+	Err      string `yaml:"error"`
 }
 
 type Result struct {
@@ -56,6 +56,7 @@ func convertType(input interface{}, match interface{}) interface{} {
 		} else {
 			receiver = zeroValue.Elem().Interface()
 		}
+		fmt.Printf("Now %T:%v\n", receiver, receiver)
 	} else if inputType.Kind() == reflect.Slice {
 		if matchType.Kind() == reflect.Slice {
 			zeroType := reflect.Zero(matchType.Elem()).Interface()

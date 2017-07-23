@@ -5,34 +5,34 @@
     - { byte: 2, bit: 0, width: 12, value: 0xfff}
     - { byte: 4, width: 16, value: 0x4242}
 
-  output: 
+  expected: 
     - bytes: [ 0x10, 0x0f, 0xff, 0xf0, 0x42, 0x42 ]
 
 "Test 2":
   input: [ 0x10, 0x0f, 0xff, 0xf0, 0x42, 0x42 ]
-  output: 
+  expected: 
     - bytes: [ 0x10, 0x0f, 0xff, 0xf0, 0x42, 0x42 ]
 
 "Test 3":
   bits:
     - { byte: 0, width: 8, value: 42}
-  output: 
+  expected: 
     - bytes: [ 0x2a ]
 
 "Test 4":
   bits:
     - { byte: 1, width: 8, value: 42}
-  output: 
+  expected: 
     - bytes: [ 0x00, 0x2a ]
 
 "Test 5":
   bits:
     - { byte: 0, width: 16, value: 0x2a2a}
-  output: 
+  expected: 
     - bytes: [ 0x2a, 0x2a ]
 
 "Test 6":
   bits:
     - { byte: 0, width: 15, value: 0x2a2a}
-  output: 
+  expected: 
     - bytes: [ 0x54, 0x54 ]

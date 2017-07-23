@@ -25,7 +25,8 @@ func TestResult(t *testing.T) {
 }
 
 func TestMatchType(t *testing.T) {
-	t1, _ := time.Parse(time.RFC3339, "2017-01-01T00:00:00-00:00Z00:00")
+	time.Local = time.UTC
+	t1 := time.Date(2017, time.January, 1, 0, 0, 0, 0, time.UTC)
 	t2, _ := t1.MarshalBinary()
 
 	tests := []struct {
@@ -36,8 +37,8 @@ func TestMatchType(t *testing.T) {
 		{int(128), uint(128), true},
 		{[]interface{}{int(2), int(4), int(6)}, []uint{2, 4, 6}, true},
 		{"foo", 128, false},
-		{"2017-01-01T00:00:00-00:00Z00:00", t1, true},
-		{"2017-01-01T00:00:00-00:00Z00:00", &t1, true},
+		{"2017-01-01T00:00:00-00:00", t1, true},
+		{"2017-01-01T00:00:00-00:00", &t1, true},
 		{t2, t1, true},
 		{t2, &t1, true},
 	}
@@ -175,9 +176,9 @@ func TestCreateByteString(t *testing.T) {
 
 func TestIterateGoodTests(t *testing.T) {
 	IterateTests("tests/good.yml", func(name string, test Test) {
-		test.Output[0]["bytes"] = convertType(test.Output[0]["bytes"], test.Input)
-		if !reflect.DeepEqual(test.Input, test.Output[0]["bytes"]) {
-			t.Errorf("Failed to complete test %s: %v does not equal %v", name, test.Input, test.Output[0]["bytes"])
+		test.Expected[0]["bytes"] = convertType(test.Expected[0]["bytes"], test.Input)
+		if !reflect.DeepEqual(test.Input, test.Expected[0]["bytes"]) {
+			t.Errorf("Failed to complete test %s: %v does not equal %v", name, test.Input, test.Expected[0]["bytes"])
 		}
 	})
 }
