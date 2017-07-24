@@ -79,6 +79,7 @@ func (f foo) Value1() int                   { return 1 }
 func (f foo) Value2() int                   { return 2 }
 func (f foo) Value3() int                   { return 3 }
 func (f foo) Value4() bar                   { return f.b }
+func (f foo) Value7() bar                   { return f.b }
 func (f foo) GetterWithArg(arg string) bool { return false }
 func (f foo) NotGetter()                    {}
 
@@ -107,6 +108,9 @@ func TestCompare(t *testing.T) {
 		map[string]interface{}{"Value2": 2},
 		map[string]interface{}{"Value3": 3},
 		map[string]interface{}{"Value4": Expected{
+			map[string]interface{}{"Value5": 5},
+		}},
+		map[string]interface{}{"Value7": []interface{}{
 			map[string]interface{}{"Value5": 5},
 		}},
 	}

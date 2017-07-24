@@ -110,9 +110,13 @@ func Compare(expectedValues Expected, object interface{}) *Result {
 			if err == nil {
 				output := f.Call(nil)[0].Interface()
 
-				if expectedValues, ok := expectedValue.(Expected); ok {
-					newResult := Compare(expectedValues, output)
-					result.merge(newResult)
+				if values, ok := expectedValue.(Expected); ok {
+					result.merge(Compare(values, output))
+				} else if values, ok := expectedValue.([]interface{}); ok {
+					expectedValues := convertType(values, Expected{})
+					if expectedValues, ok := expectedValues.(Expected); ok {
+						result.merge(Compare(expectedValues, output))
+					}
 				} else {
 					expectedValue = convertType(expectedValue, output)
 
