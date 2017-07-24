@@ -22,6 +22,14 @@ func TestResult(t *testing.T) {
 	if result.String() != "\tsample message" {
 		t.Errorf("Got unexpected result string")
 	}
+
+	result1 := &Result{}
+	result1.Addf("Nested message")
+	result.merge(result1)
+
+	if result.String() != "\tsample message\n\tNested message" {
+		t.Errorf("Got unexpected result string")
+	}
 }
 
 func TestMatchType(t *testing.T) {
@@ -115,12 +123,11 @@ func TestCompare(t *testing.T) {
 	}
 
 	expected[2] = map[string]interface{}{"Value3": 3}
-	expected = append(expected, map[string]interface{}{"Value4": 3})
+	expected = append(expected, map[string]interface{}{"Value6": 3})
 	result = Compare(expected, f)
 	if !result.Failed() {
 		t.Errorf("Expected false")
 	}
-
 }
 
 func TestSetBit(t *testing.T) {
