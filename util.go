@@ -22,6 +22,12 @@ type Result struct {
 	failures []string
 }
 
+func (r *Result) merge(other *Result) {
+	for _, failure := range other.failures {
+		r.failures = append(r.failures, failure)
+	}
+}
+
 func (r *Result) Failed() bool {
 	return len(r.failures) > 0
 }
@@ -56,7 +62,6 @@ func convertType(input interface{}, match interface{}) interface{} {
 		} else {
 			receiver = zeroValue.Elem().Interface()
 		}
-		fmt.Printf("Now %T:%v\n", receiver, receiver)
 	} else if inputType.Kind() == reflect.Slice {
 		if matchType.Kind() == reflect.Slice {
 			zeroType := reflect.Zero(matchType.Elem()).Interface()
@@ -105,10 +110,15 @@ func Compare(expectedValues Expected, object interface{}) *Result {
 			if err == nil {
 				output := f.Call(nil)[0].Interface()
 
-				expectedValue = convertType(expectedValue, output)
+				if expectedValues, ok := expectedValue.(Expected); ok {
+					newResult := Compare(expectedValues, output)
+					result.merge(newResult)
+				} else {
+					expectedValue = convertType(expectedValue, output)
 
-				if !reflect.DeepEqual(output, expectedValue) {
-					result.Addf("%s Expected %v but got %v", name, expectedValue, output)
+					if !reflect.DeepEqual(output, expectedValue) {
+						result.Addf("%s Expected %v but got %v", name, expectedValue, output)
+					}
 				}
 			} else {
 				result.Addf("%v", err)
