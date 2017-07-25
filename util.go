@@ -11,6 +11,11 @@ import (
 )
 
 type Expected []map[string]interface{}
+
+func log(format string, args ...interface{}) {
+	//fmt.Printf(format, args...)
+}
+
 type Test struct {
 	Bits     []map[string]int
 	Input    []byte
@@ -41,6 +46,7 @@ func (r *Result) String() string {
 }
 
 func convertType(input interface{}, match interface{}) interface{} {
+	log("Converting %T:%v to %T\n", input, input, match)
 	receiver := input
 	inputValue := reflect.ValueOf(input)
 	matchValue := reflect.ValueOf(match)
@@ -66,7 +72,8 @@ func convertType(input interface{}, match interface{}) interface{} {
 		if matchType.Kind() == reflect.Slice {
 			zeroType := reflect.Zero(matchType.Elem()).Interface()
 			receiverArray := reflect.MakeSlice(matchType, 0, 0)
-			for i := 0; i < matchValue.Len(); i++ {
+			log("Creating slice of %s\n", matchType)
+			for i := 0; i < inputValue.Len(); i++ {
 				receiverArray = reflect.Append(receiverArray, reflect.ValueOf(convertType(inputValue.Index(i).Interface(), zeroType)))
 			}
 			receiver = receiverArray.Interface()
@@ -85,17 +92,20 @@ func convertType(input interface{}, match interface{}) interface{} {
 }
 
 func getterFunc(name string, i interface{}) (f reflect.Value, err error) {
-	object := reflect.ValueOf(i)
+	for _, name := range strings.Split(name, ".") {
+		object := reflect.ValueOf(i)
+		f = object.MethodByName(name)
+		if f.Kind() != reflect.Func {
+			err = fmt.Errorf("%s is not a method on %v", name, object)
+		}
 
-	f = object.MethodByName(name)
-	if f.Kind() != reflect.Func {
-		err = fmt.Errorf("%s is not a method on %v", name, object)
-	}
-
-	if err == nil {
-		t := f.Type()
-		if t.NumIn() != 0 || t.NumOut() == 0 {
-			err = fmt.Errorf("%s does not appear to be a getter method", name)
+		if err == nil {
+			t := f.Type()
+			if t.NumIn() == 0 && t.NumOut() == 1 {
+				i = f.Call(nil)[0].Interface()
+			} else {
+				err = fmt.Errorf("%s does not appear to be a getter method", name)
+			}
 		}
 	}
 	return f, err
@@ -106,23 +116,14 @@ func Compare(expectedValues Expected, object interface{}) *Result {
 
 	for _, e := range expectedValues {
 		for name, expectedValue := range e {
+			log("Comparing %s to %T:%v\n", name, expectedValue, expectedValue)
 			f, err := getterFunc(name, object)
 			if err == nil {
 				output := f.Call(nil)[0].Interface()
+				expectedValue = convertType(expectedValue, output)
 
-				if values, ok := expectedValue.(Expected); ok {
-					result.merge(Compare(values, output))
-				} else if values, ok := expectedValue.([]interface{}); ok {
-					expectedValues := convertType(values, Expected{})
-					if expectedValues, ok := expectedValues.(Expected); ok {
-						result.merge(Compare(expectedValues, output))
-					}
-				} else {
-					expectedValue = convertType(expectedValue, output)
-
-					if !reflect.DeepEqual(output, expectedValue) {
-						result.Addf("%s Expected %v but got %v", name, expectedValue, output)
-					}
+				if !reflect.DeepEqual(output, expectedValue) {
+					result.Addf("%s Expected %v but got %v", name, expectedValue, output)
 				}
 			} else {
 				result.Addf("%v", err)

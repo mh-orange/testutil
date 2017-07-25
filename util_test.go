@@ -107,17 +107,13 @@ func TestCompare(t *testing.T) {
 		map[string]interface{}{"Value1": 1},
 		map[string]interface{}{"Value2": 2},
 		map[string]interface{}{"Value3": 3},
-		map[string]interface{}{"Value4": Expected{
-			map[string]interface{}{"Value5": 5},
-		}},
-		map[string]interface{}{"Value7": []interface{}{
-			map[string]interface{}{"Value5": 5},
-		}},
+		map[string]interface{}{"Value4.Value5": 5},
+		map[string]interface{}{"Value7.Value5": 5},
 	}
 
 	result := Compare(expected, f)
 	if result.Failed() {
-		t.Errorf("Expected true")
+		t.Errorf("Expected true, got %s", result)
 	}
 
 	expected[2] = map[string]interface{}{"Value3": 4}
@@ -131,6 +127,20 @@ func TestCompare(t *testing.T) {
 	result = Compare(expected, f)
 	if !result.Failed() {
 		t.Errorf("Expected false")
+	}
+}
+
+func TestCompareFromYaml(t *testing.T) {
+	err := IterateTests("tests/nested.yml", func(name string, test Test) {
+		f := foo{}
+		result := Compare(test.Expected, f)
+		if result.Failed() {
+			t.Errorf("Expected true, got %s", result)
+		}
+	})
+
+	if err != nil {
+		panic(err.Error())
 	}
 }
 

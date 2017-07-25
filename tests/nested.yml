@@ -1,0 +1,10 @@
+"Test 1":
+  bits:
+    - { byte: 0, bit: 0, width: 1, value: 1}
+
+  expected: 
+    - Value1: 1
+    - Value2: 2
+    - Value3: 3
+    - Value4.Value5: 5
+    - Value7.Value5: 5
