@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"io/ioutil"
 	"reflect"
+	"regexp"
+	"strconv"
 	"strings"
 
 	"gopkg.in/yaml.v2"
@@ -91,18 +93,43 @@ func convertType(input interface{}, match interface{}) interface{} {
 	return receiver
 }
 
+var indexPattern = regexp.MustCompile(`^(\w+)\[(\d+)\]$`)
+
 func getterFunc(name string, i interface{}) (f reflect.Value, err error) {
 	for _, name := range strings.Split(name, ".") {
 		object := reflect.ValueOf(i)
+
+		var sliceName string
+		var index int
+
+		if values := indexPattern.FindStringSubmatch(name); len(values) > 0 {
+			name = values[1]
+			sliceName = name
+			index, _ = strconv.Atoi(values[2])
+		} else {
+			sliceName = ""
+		}
+
 		f = object.MethodByName(name)
 		if f.Kind() != reflect.Func {
-			err = fmt.Errorf("%s is not a method on %v", name, object)
+			err = fmt.Errorf("%s is not a method on %T:%v", name, i, i)
 		}
 
 		if err == nil {
 			t := f.Type()
 			if t.NumIn() == 0 && t.NumOut() == 1 {
-				i = f.Call(nil)[0].Interface()
+				if sliceName != "" {
+					slice := f.Call(nil)[0]
+					if slice.Kind() != reflect.Slice {
+						err = fmt.Errorf("Slice indices given but %s did not return a slice", name)
+					} else if index >= slice.Len() {
+						err = fmt.Errorf("%s[%d] out of range [0:%d]", name, index, slice.Len())
+					} else {
+						i = slice.Index(index).Interface()
+					}
+				} else {
+					i = f.Call(nil)[0].Interface()
+				}
 			} else {
 				err = fmt.Errorf("%s does not appear to be a getter method", name)
 			}

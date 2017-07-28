@@ -67,12 +67,17 @@ func TestMatchType(t *testing.T) {
 	}
 }
 
-type bar struct{}
+type bar struct {
+	value int
+}
 
 func (b bar) Value5() int { return 5 }
 
+func (b bar) Value() int { return b.value }
+
 type foo struct {
-	b bar
+	b      bar
+	values []bar
 }
 
 func (f foo) Value1() int                   { return 1 }
@@ -81,6 +86,7 @@ func (f foo) Value3() int                   { return 3 }
 func (f foo) Value4() bar                   { return f.b }
 func (f foo) Value7() bar                   { return f.b }
 func (f foo) GetterWithArg(arg string) bool { return false }
+func (f foo) Values() []bar                 { return []bar{bar{0}, bar{1}} }
 func (f foo) NotGetter()                    {}
 
 func TestGetterFunc(t *testing.T) {

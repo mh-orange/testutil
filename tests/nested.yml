@@ -8,3 +8,5 @@
     - Value3: 3
     - Value4.Value5: 5
     - Value7.Value5: 5
+    - Values[0].Value: 0
+    - Values[1].Value: 1
